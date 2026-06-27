@@ -129,9 +129,12 @@ Final target: a generic, config-driven framework producing ONE STEP with a
 **watertight assembled engine** plus everything else as separate nodes.
 
 - **Output nodes**: `RB3135_Engine_Assembly` (26 engine-body + 7 pylon fairing
-  faces incl. heatshield, sewn), `RB3135_Pylon_Aux` (12 cut/trim faces),
-  `RB3135_CFD_Density_Zones` (43 density shells). `step_exporter.export_step` now
-  takes an ordered `(name, shape)` node list.
+  faces incl. heatshield, sewn) is the **only node by default**. The
+  `RB3135_Pylon_Aux` (12 cut/trim faces, `--with-pylon-aux`) and
+  `RB3135_CFD_Density_Zones` (43 density shells, `--with-density`) nodes are
+  **opt-in** — they are huge auxiliary surfaces (~43 m trim planes, ~30 m CFD
+  cylinders) that otherwise bury the engine in a viewer. `step_exporter.export_step`
+  takes an ordered `(name, shape)` node list (None entries dropped).
 - **Watertight** = one connected sewn shell, open inlets/outlets allowed,
   best-effort (always writes; `--strict` to hard-fail). The engine **body** sews
   to a single watertight shell (52 shared edges, 4 open boundaries, 0 gaps);

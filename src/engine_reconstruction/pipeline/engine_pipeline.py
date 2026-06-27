@@ -340,15 +340,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fpd-dir", type=Path, help="Directory of .fpd files")
     parser.add_argument("--output-dir", type=Path, help="Output directory")
     parser.add_argument(
-        "--no-density", action="store_true", help="Exclude the CFD density-zone node"
+        "--with-density",
+        action="store_true",
+        help="Add the CFD density-zone node (large CFD-domain cylinders)",
     )
     parser.add_argument(
         "--no-pylon", action="store_true", help="Exclude the pylon from the assembly"
     )
     parser.add_argument(
-        "--no-pylon-aux",
+        "--with-pylon-aux",
         action="store_true",
-        help="Exclude the pylon cut/trim (construction) node",
+        help="Add the pylon cut/trim (construction) node (large stray planes)",
     )
     parser.add_argument(
         "--with-components",
@@ -368,12 +370,12 @@ def main(argv: list[str] | None = None) -> int:
         overrides["fpd_dir"] = args.fpd_dir
     if args.output_dir:
         overrides["output_dir"] = args.output_dir
-    if args.no_density:
-        overrides["include_density_zones"] = False
+    if args.with_density:
+        overrides["include_density_zones"] = True
     if args.no_pylon:
         overrides["include_pylon"] = False
-    if args.no_pylon_aux:
-        overrides["include_pylon_aux"] = False
+    if args.with_pylon_aux:
+        overrides["include_pylon_aux"] = True
     if args.with_components:
         overrides["include_component_compound"] = True
     if args.downsample:

@@ -48,5 +48,5 @@ For a grid `G` of shape `(nu, nv, 3)`:
 
 `RB3135_FPD_DIR`, `RB3135_OUTPUT_DIR`, `RB3135_TOPOLOGY_CSV` (`none` disables),
 `RB3135_DOWNSAMPLE`, `RB3135_NO_DENSITY`. CLI flags: `--fpd-dir`,
-`--output-dir`, `--no-density`, `--no-pylon`, `--no-pylon-aux`,
+`--output-dir`, `--with-density`, `--with-pylon-aux`, `--no-pylon`,
 `--with-components`, `--downsample`, `--strict`.

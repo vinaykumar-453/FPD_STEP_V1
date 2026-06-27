@@ -33,8 +33,11 @@ class Config:
     use_topology_csv_override: bool = True  # hybrid: auto-derive + optional CSV
     downsample: bool = False  # full-resolution fitting by default
     include_pylon: bool = True  # sew the pylon fairing into the engine assembly
-    include_pylon_aux: bool = True  # pylon cut/trim faces as a separate node
-    include_density_zones: bool = True  # CFD density zones as a separate node
+    # The next two are OFF by default: the pylon cut/trim planes (~43 m) and the
+    # CFD density cylinders are huge auxiliary surfaces that bury the engine in a
+    # viewer. The default output is the clean watertight engine only.
+    include_pylon_aux: bool = False  # pylon cut/trim faces as a separate node
+    include_density_zones: bool = False  # CFD density zones as a separate node
     include_component_compound: bool = False  # avoid duplicate overlapping geometry
     strict_watertight: bool = False  # best-effort: always write the STEP, just report
 

@@ -34,20 +34,26 @@ FPD files → discovery → parse → orientation recovery → grid validation
 
 ## Key design decisions
 
-The default output is **one `RB3135.step` (AP214)** containing three named nodes:
+The default output is **one `RB3135.step` (AP214)** containing a single node —
+the clean **watertight engine** — so a CAD viewer shows the engine, not the CFD
+domain:
 
-| STEP node | Contents |
-|-----------|----------|
-| `RB3135_Engine_Assembly` | **Watertight assembled engine** — 26 engine-body surfaces + the 7 pylon fairing surfaces (upper/lower aerofoil, top/bottom closing caps, heatshield) sewn together. |
-| `RB3135_Pylon_Aux` | The 12 pylon `wing_cut`/`TE_cut` construction/trim faces. |
-| `RB3135_CFD_Density_Zones` | The 43 CFD density zones, reconstructed as shells. |
+| STEP node | When | Contents |
+|-----------|------|----------|
+| `RB3135_Engine_Assembly` | always | **Watertight assembled engine** — 26 engine-body surfaces + the 7 pylon fairing surfaces (upper/lower aerofoil, top/bottom closing caps, heatshield) sewn together. |
+| `RB3135_Pylon_Aux` | `--with-pylon-aux` | The 12 pylon `wing_cut`/`TE_cut` construction/trim faces (large stray planes ~43 m). |
+| `RB3135_CFD_Density_Zones` | `--with-density` | The 43 CFD density zones (large CFD-domain cylinders). |
+
+> The pylon trim planes and density cylinders are huge auxiliary surfaces that
+> visually bury the engine, so they are **off by default** and added only on
+> request.
 
 | Decision | Rationale |
 |----------|-----------|
 | **Generic + config-driven** | FPD files are read from `Config.fpd_dir` (overridable via `RB3135_FPD_DIR` / `--fpd-dir`). Point it at any turbofan FPD folder that follows the RB3135 naming convention and it reconstructs that engine. |
 | **Name-spec turbofan skeleton** | The 13-component skeleton (`ENGINE_BODY_COMPONENTS`), name-based classification, inboard/outboard grouping, and the IS seam map drive which surfaces form the engine. |
 | **"Watertight" = one connected sewn shell, no caps** | All engine-assembly faces are sewn so every internal interface is a shared edge; the real intake/fan-face/nozzle openings stay open. Watertight ⇔ no two free edges are coincident — **reported** every run. Best-effort by default; `--strict` hard-fails if not manifold. The engine *body* sews to a single watertight shell; the pylon attaches by surface contact, so it adds shells within the assembly (boolean imprinting would be needed to fuse them — out of scope). |
-| **Everything physical + density included** | Engine assembly is the watertight core; pylon trim and density zones are kept as separate, toggleable nodes (`--no-pylon-aux`, `--no-density`, `--no-pylon` to drop). |
+| **Engine-only by default; extras opt-in** | Default = the watertight engine assembly only. Add the CFD density zones with `--with-density` and the pylon trim planes with `--with-pylon-aux` (each as its own node); `--no-pylon` drops the pylon. |
 | **Full-resolution engine fitting + overshoot guard** | Engine surfaces fit at full resolution (C2, deg 3–8); a pole-based overshoot guard refits/rejects any surface that balloons outside its point cloud (pylon panels). Oversized pylon grids are capped for tractable fitting. |
 
 ### Visual check

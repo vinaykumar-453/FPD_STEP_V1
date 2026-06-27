@@ -17,3 +17,8 @@ output_*/
 
 # Local tooling / session state
 .claude/
+
+# Tracked sample artifacts (override the output/ and *.step ignores above)
+!samples/
+!samples/*.step
+!samples/*.png

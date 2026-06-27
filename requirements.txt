@@ -1,0 +1,14 @@
+# Runtime (PyPI-installable) dependencies.
+numpy>=1.26
+scipy>=1.11
+
+# Development / quality gates.
+pytest>=8.0
+mypy>=1.8
+ruff>=0.5
+black>=24.0
+
+# NOTE: pythonocc-core (OpenCASCADE Python bindings) is NOT on PyPI.
+# Install it from conda-forge:
+#     conda install -c conda-forge pythonocc-core
+# or use the provided environment.yml.

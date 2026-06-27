@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Reconstruction outputs
+output/
+output_*/
+*.step
+*.stp
+
+# OS
+.DS_Store
+
+# Local tooling / session state
+.claude/

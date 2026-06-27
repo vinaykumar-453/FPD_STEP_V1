@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "engine_reconstruction"
+version = "1.0.0"
+description = "Automatic reconstruction of a watertight (sewn manifold) CAD STEP model of the RB3135 free-flying turbofan from GEMINI FPD surface point grids."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Vinaykumar Venkateshkumar" }]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+# pythonocc-core is intentionally NOT listed here: it is only installable from
+# conda-forge, not PyPI. See environment.yml. The non-OCC layers (io, grid,
+# topology, infrastructure) run and unit-test without it.
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.8",
+    "ruff>=0.5",
+    "black>=24.0",
+]
+
+[project.scripts]
+rb3135-reconstruct = "engine_reconstruction.pipeline.engine_pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W", "N"]
+ignore = [
+    "N802", "N803", "N806",  # allow OCC-style and grid (NU, NV) names
+    "UP042",                  # `str, Enum` is intentional (stable JSON values)
+]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["engine_reconstruction"]
+mypy_path = "src"
+ignore_missing_imports = true       # OCC has no type stubs
+warn_unused_ignores = false
+disallow_untyped_defs = false
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+markers = [
+    "occ: tests that require pythonocc-core (OpenCASCADE)",
+    "integration: end-to-end tests over real FPD data",
+]

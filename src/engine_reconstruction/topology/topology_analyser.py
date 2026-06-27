@@ -26,13 +26,13 @@ from .topology_graph import TopologyGraph
 
 logger = get_logger(__name__)
 
-_FREE_FLYING_SUFFIX = re.compile(r"[_-]free[_-]flying$", re.IGNORECASE)
+_CONFIG_SUFFIX = re.compile(r"[_-](?:free[_-]flying|installed|uninstalled)$", re.IGNORECASE)
 _ROLE_TOKENS = ("inboard", "outboard")
 
 
 def component_key(stem: str) -> str:
     """Derive the underscore component key (e.g. ``BP_inner``) from a file stem."""
-    base = _FREE_FLYING_SUFFIX.sub("", stem)
+    base = _CONFIG_SUFFIX.sub("", stem)
     for tok in _ROLE_TOKENS:
         if base.lower().endswith("_" + tok):
             return base[: -(len(tok) + 1)]
@@ -107,12 +107,17 @@ def analyse(
             cls = override
         result.surface_class[f.stem] = cls
 
-    # --- engine-body component grouping ---
+    # --- engine-body component grouping (prefix match against the skeleton) ---
     for f in files:
         if result.surface_class[f.stem] is not SurfaceClass.ENGINE_BODY:
             continue
-        key = component_key(f.stem)
-        result.components.setdefault(key, []).append(f.stem)
+        comp = expected_topology.match_engine_component(f.stem)
+        if comp is None:
+            # Fall back to the derived key so the surface is still tracked, but it
+            # won't be picked up by the skeleton-driven assembly.
+            logger.warning("Engine-body surface %s matched no skeleton component", f.stem)
+            comp = component_key(f.stem)
+        result.components.setdefault(comp, []).append(f.stem)
         result.engine_body_surfaces.append(f.stem)
     result.engine_body_surfaces.sort()
 

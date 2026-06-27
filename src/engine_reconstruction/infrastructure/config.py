@@ -32,6 +32,10 @@ class Config:
     # --- Behaviour switches --------------------------------------------------
     use_topology_csv_override: bool = True  # hybrid: auto-derive + optional CSV
     downsample: bool = False  # full-resolution fitting by default
+    # When a dataset ships multiple engine configurations (filenames tagged
+    # "_installed" / "_uninstalled"), select which one to reconstruct. Files with
+    # no such tag (e.g. "_free-flying") are always included regardless.
+    configuration: str = "installed"
     include_pylon: bool = True  # sew the pylon fairing into the engine assembly
     # The next two are OFF by default: the pylon cut/trim planes (~43 m) and the
     # CFD density cylinders are huge auxiliary surfaces that bury the engine in a
@@ -72,7 +76,9 @@ class Config:
     pylon_fit_cap: int = 250
 
     # --- Misc ----------------------------------------------------------------
-    expected_fpd_count: int = 88
+    # Optional sanity hint: warn if the discovered count differs. None = no warning
+    # (file counts vary by dataset / configuration, so off by default).
+    expected_fpd_count: int | None = None
     random_seed: int = 0
 
     def resolved_output_dir(self) -> Path:

@@ -18,6 +18,20 @@ def test_component_key():
     assert component_key("Spinner_inboard_free-flying") == "Spinner"
     assert component_key("BP_nozzle_Blunt_TE_outboard_free-flying") == "BP_nozzle_Blunt_TE"
     assert component_key("CR_inner_inboard_free-flying") == "CR_inner"
+    # installed/uninstalled configuration suffixes are stripped too
+    assert component_key("BP_inner_inboard_installed") == "BP_inner"
+    assert component_key("CR_nozzle_Blunt_TE_outboard_uninstalled") == "CR_nozzle_Blunt_TE"
+
+
+def test_match_engine_component_prefix():
+    from engine_reconstruction.topology import expected_topology as et
+
+    assert et.match_engine_component("BP_inner_inboard_installed") == "BP_inner"
+    assert et.match_engine_component("BP_inlet_outboard_uninstalled") == "BP_inlet"
+    # longest-first: the nozzle TE must not collapse to a shorter prefix
+    assert et.match_engine_component("CR_nozzle_Blunt_TE_inboard_installed") == "CR_nozzle_Blunt_TE"
+    assert et.match_engine_component("Spinner_inboard_free-flying") == "Spinner"
+    assert et.match_engine_component("Whatever_unknown_surface") is None
 
 
 def test_neighbour_detection_finds_shared_seam():

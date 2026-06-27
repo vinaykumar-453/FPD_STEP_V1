@@ -20,7 +20,11 @@ from ..infrastructure.logging import get_logger
 
 logger = get_logger(__name__)
 
-_FREE_FLYING_SUFFIX = re.compile(r"[_-]free[_-]flying$", re.IGNORECASE)
+# A dataset/configuration suffix tags the export variant of a surface, e.g.
+# "_free-flying", "_installed", "_uninstalled". It is stripped before
+# classification and component matching.
+_CONFIG_SUFFIX = re.compile(r"[_-](?:free[_-]flying|installed|uninstalled)$", re.IGNORECASE)
+_CONFIG_TAG = re.compile(r"[_-](installed|uninstalled)$", re.IGNORECASE)
 _ROLE_TOKENS = ("inboard", "outboard")
 
 # System lookup by component-key prefix (engine body).
@@ -35,7 +39,17 @@ _SYSTEM_BY_PREFIX: tuple[tuple[str, str], ...] = (
 
 
 def _strip_suffix(stem: str) -> str:
-    return _FREE_FLYING_SUFFIX.sub("", stem)
+    return _CONFIG_SUFFIX.sub("", stem)
+
+
+def config_tag(stem: str) -> str | None:
+    """Return the configuration tag of a file stem, or ``None``.
+
+    ``"BP_inner_inboard_installed"`` -> ``"installed"``;
+    ``"Spinner_inboard_free-flying"`` -> ``None`` (no installed/uninstalled tag).
+    """
+    m = _CONFIG_TAG.search(stem)
+    return m.group(1).lower() if m else None
 
 
 def classify(path: Path) -> FpdFile:
@@ -112,9 +126,25 @@ def discover(config: Config) -> list[FpdFile]:
     if not fpd_dir.is_dir():
         raise DiscoveryError(f"FPD directory does not exist: {fpd_dir}")
 
-    paths = sorted(fpd_dir.glob("*.fpd"))
-    if not paths:
+    all_paths = sorted(fpd_dir.glob("*.fpd"))
+    if not all_paths:
         raise DiscoveryError(f"No .fpd files found in {fpd_dir}")
+
+    # Configuration filter: when files are tagged "_installed"/"_uninstalled",
+    # keep only the selected configuration. Untagged files are always kept.
+    wanted = config.configuration.strip().lower()
+    paths = [p for p in all_paths if (config_tag(p.stem) or wanted) == wanted]
+    n_dropped = len(all_paths) - len(paths)
+    if n_dropped:
+        logger.info(
+            "Configuration '%s': kept %d of %d files (%d other-configuration files skipped)",
+            wanted,
+            len(paths),
+            len(all_paths),
+            n_dropped,
+        )
+    if not paths:
+        raise DiscoveryError(f"No .fpd files match configuration '{wanted}' in {fpd_dir}")
 
     # Duplicate detection by stem (case-insensitive).
     seen: dict[str, Path] = {}
@@ -143,6 +173,6 @@ def discover(config: Config) -> list[FpdFile]:
         by_class.get(SurfaceClass.CFD_DENSITY, 0),
         by_class.get(SurfaceClass.UNKNOWN, 0),
     )
-    if n_total != config.expected_fpd_count:
+    if config.expected_fpd_count is not None and n_total != config.expected_fpd_count:
         logger.warning("Expected %d FPD files but found %d", config.expected_fpd_count, n_total)
     return files

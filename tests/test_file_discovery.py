@@ -53,6 +53,41 @@ def test_discover_empty_dir(tmp_path):
         file_discovery.discover(cfg)
 
 
+@pytest.mark.parametrize(
+    "stem,expected",
+    [
+        ("BP_inner_inboard_installed", "installed"),
+        ("Spinner_outboard_uninstalled", "uninstalled"),
+        ("Spinner_inboard_free-flying", None),
+        ("Pylon_upper_installed", "installed"),
+    ],
+)
+def test_config_tag(stem, expected):
+    assert file_discovery.config_tag(stem) == expected
+
+
+def test_classify_strips_installed_suffix():
+    f = file_discovery.classify(Path("/x/BP_inner_inboard_installed.fpd"))
+    assert f.surface_class is SurfaceClass.ENGINE_BODY
+    assert f.system == "Bypass"
+    assert f.role == "inboard"
+
+
+def test_discover_configuration_filter(tmp_path):
+    grid = "2 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n"
+    for name in [
+        "BP_inner_inboard_installed",
+        "BP_inner_inboard_uninstalled",
+        "Spinner_inboard_free-flying",  # untagged -> always kept
+    ]:
+        (tmp_path / f"{name}.fpd").write_text(grid)
+    files = file_discovery.discover(Config(fpd_dir=tmp_path, configuration="installed"))
+    stems = {f.stem for f in files}
+    assert "BP_inner_inboard_installed" in stems
+    assert "Spinner_inboard_free-flying" in stems
+    assert "BP_inner_inboard_uninstalled" not in stems  # other configuration dropped
+
+
 def test_discover_counts(tmp_path):
     for name in [
         "Spinner_inboard_free-flying",

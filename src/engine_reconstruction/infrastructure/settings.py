@@ -49,6 +49,10 @@ def load_config(**overrides: object) -> Config:
         else:
             cfg = replace(cfg, topology_csv=Path(env_csv))
 
+    env_cfg = os.environ.get("RB3135_CONFIGURATION")
+    if env_cfg:
+        cfg = replace(cfg, configuration=env_cfg.strip().lower())
+
     env_ds = _as_bool(os.environ.get("RB3135_DOWNSAMPLE"))
     if env_ds is not None:
         cfg = replace(cfg, downsample=env_ds)

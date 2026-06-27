@@ -47,6 +47,17 @@ For a grid `G` of shape `(nu, nv, 3)`:
 ## Environment overrides
 
 `RB3135_FPD_DIR`, `RB3135_OUTPUT_DIR`, `RB3135_TOPOLOGY_CSV` (`none` disables),
-`RB3135_DOWNSAMPLE`, `RB3135_NO_DENSITY`. CLI flags: `--fpd-dir`,
-`--output-dir`, `--with-density`, `--with-pylon-aux`, `--no-pylon`,
-`--with-components`, `--downsample`, `--strict`.
+`RB3135_DOWNSAMPLE`, `RB3135_NO_DENSITY`, `RB3135_CONFIGURATION`. CLI flags:
+`--fpd-dir`, `--output-dir`, `--configuration {installed,uninstalled}`,
+`--with-density`, `--with-pylon-aux`, `--no-pylon`, `--with-components`,
+`--downsample`, `--strict`.
+
+## Configuration variants & component matching
+
+- Files may be tagged `_free-flying`, `_installed`, or `_uninstalled`. The
+  `configuration` setting (default `installed`) selects which tagged variant to
+  use; untagged files are always kept. All three suffixes are stripped before
+  classification.
+- Engine-body surfaces are mapped to the 13-component skeleton by **prefix
+  match** (`engine_reconstruction.topology.expected_topology.match_engine_component`),
+  longest-name-first, so role/config suffixes don't need exact handling.

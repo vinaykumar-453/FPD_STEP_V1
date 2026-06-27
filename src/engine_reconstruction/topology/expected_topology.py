@@ -30,6 +30,24 @@ ENGINE_BODY_COMPONENTS: tuple[str, ...] = (
     "CR_nozzle_Blunt_TE",
 )
 
+
+def match_engine_component(stem: str) -> str | None:
+    """Map a file stem to an engine-body component by **prefix** match.
+
+    A surface belongs to component ``C`` if its stem starts with ``C`` (e.g.
+    ``BP_inner_inboard_installed`` -> ``BP_inner``). Components are tried
+    longest-first so the most specific name wins (``CR_nozzle_Blunt_TE`` before
+    any shorter prefix). Returns ``None`` if no skeleton component matches.
+
+    This is naming-tolerant: any role tokens or configuration suffixes after the
+    component name (``_inboard``, ``_installed``, ``_free-flying`` …) are ignored.
+    """
+    for name in sorted(ENGINE_BODY_COMPONENTS, key=len, reverse=True):
+        if stem.startswith(name):
+            return name
+    return None
+
+
 SYSTEM_OF_COMPONENT: dict[str, str] = {
     "Spinner": "Intake",
     "Fan_face": "Intake",

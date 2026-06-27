@@ -40,12 +40,12 @@ from ..visualization import diagnostics
 
 logger = get_logger(__name__)
 
-_FREE_FLYING = re.compile(r"[_-]free[_-]flying$", re.IGNORECASE)
+_CONFIG_SUFFIX = re.compile(r"[_-](?:free[_-]flying|installed|uninstalled)$", re.IGNORECASE)
 
 
 def _density_zone_key(stem: str) -> str:
     """Group a density file into its zone (e.g. ``Jet_density_1``)."""
-    base = _FREE_FLYING.sub("", stem)
+    base = _CONFIG_SUFFIX.sub("", stem)
     key = re.split(r"_cylindrical", base, flags=re.IGNORECASE)[0]
     return re.sub(r"_(outer|inner)$", "", key, flags=re.IGNORECASE)
 
@@ -340,6 +340,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fpd-dir", type=Path, help="Directory of .fpd files")
     parser.add_argument("--output-dir", type=Path, help="Output directory")
     parser.add_argument(
+        "--configuration",
+        choices=["installed", "uninstalled"],
+        help="Engine configuration to select when files are tagged "
+        "_installed/_uninstalled (default: installed)",
+    )
+    parser.add_argument(
         "--with-density",
         action="store_true",
         help="Add the CFD density-zone node (large CFD-domain cylinders)",
@@ -370,6 +376,8 @@ def main(argv: list[str] | None = None) -> int:
         overrides["fpd_dir"] = args.fpd_dir
     if args.output_dir:
         overrides["output_dir"] = args.output_dir
+    if args.configuration:
+        overrides["configuration"] = args.configuration
     if args.with_density:
         overrides["include_density_zones"] = True
     if args.no_pylon:

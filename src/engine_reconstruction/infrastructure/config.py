@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Default location of the 88 FPD files on this workstation.
-DEFAULT_FPD_DIR = Path("/Users/vinaykumar/Downloads/ICEM_CAD_working_directory_spoof/FPD")
+DEFAULT_FPD_DIR = Path("/Users/vinaykumar/Downloads/FPD_2")
 # Optional CSV that can override/validate auto-derived classification & adjacency.
 DEFAULT_TOPOLOGY_CSV = Path(
     "/Users/vinaykumar/Downloads/ICEM_CAD_working_directory_spoof/PY/rb3135_topology.csv"
@@ -27,15 +27,15 @@ class Config:
     fpd_dir: Path = DEFAULT_FPD_DIR
     output_dir: Path = Path("output")
     topology_csv: Path | None = DEFAULT_TOPOLOGY_CSV
-    step_filename: str = "RB3135.step"
+    step_filename: str = "Result.step"
 
     # --- Behaviour switches --------------------------------------------------
-    use_topology_csv_override: bool = True  # hybrid: auto-derive + optional CSV
+    use_topology_csv_override: bool = False  # hybrid: auto-derive + optional CSV
     downsample: bool = False  # full-resolution fitting by default
     # When a dataset ships multiple engine configurations (filenames tagged
     # "_installed" / "_uninstalled"), select which one to reconstruct. Files with
     # no such tag (e.g. "_free-flying") are always included regardless.
-    configuration: str = "installed"
+    configuration: str = "uninstalled"
     include_pylon: bool = True  # sew the pylon fairing into the engine assembly
     # The next two are OFF by default: the pylon cut/trim planes (~43 m) and the
     # CFD density cylinders are huge auxiliary surfaces that bury the engine in a

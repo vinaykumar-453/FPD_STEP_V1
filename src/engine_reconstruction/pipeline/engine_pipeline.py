@@ -363,6 +363,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also add the per-component compound node (duplicates engine geometry)",
     )
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        metavar="PATTERN",
+        help="Ignore FPD surfaces whose name matches PATTERN (case-insensitive "
+        "substring, or glob if it contains * ? [). Repeatable; adds to the "
+        "configured/env defaults (e.g. --exclude Pylon_heatshield_body).",
+    )
+    parser.add_argument(
+        "--no-exclude",
+        action="store_true",
+        help="Clear all exclusion patterns and reconstruct every surface "
+        "(including the pylon heatshield body excluded by default)",
+    )
     parser.add_argument("--downsample", action="store_true", help="Enable grid downsampling")
     parser.add_argument(
         "--strict",
@@ -386,6 +400,11 @@ def main(argv: list[str] | None = None) -> int:
         overrides["include_pylon_aux"] = True
     if args.with_components:
         overrides["include_component_compound"] = True
+    if args.no_exclude:
+        overrides["exclude_patterns"] = ()
+    elif args.exclude:
+        # Append CLI patterns to whatever defaults/env already define.
+        overrides["exclude_patterns"] = load_config().exclude_patterns + tuple(args.exclude)
     if args.downsample:
         overrides["downsample"] = True
     if args.strict:

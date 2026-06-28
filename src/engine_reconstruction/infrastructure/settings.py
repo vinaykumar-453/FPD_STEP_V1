@@ -6,11 +6,14 @@ Environment variables (all optional) override defaults:
   * ``RB3135_TOPOLOGY_CSV``    -> Config.topology_csv ("none" disables override)
   * ``RB3135_DOWNSAMPLE``      -> Config.downsample (1/true/yes)
   * ``RB3135_NO_DENSITY``      -> include_density_zones = False
+  * ``RB3135_EXCLUDE``         -> Config.exclude_patterns (comma/semicolon list;
+                                  "none"/empty clears all exclusions)
 """
 
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import replace
 from pathlib import Path
 
@@ -59,6 +62,14 @@ def load_config(**overrides: object) -> Config:
 
     if _as_bool(os.environ.get("RB3135_NO_DENSITY")):
         cfg = replace(cfg, include_density_zones=False)
+
+    env_excl = os.environ.get("RB3135_EXCLUDE")
+    if env_excl is not None:
+        if env_excl.strip().lower() in {"", "none"}:
+            cfg = replace(cfg, exclude_patterns=())
+        else:
+            patterns = tuple(s.strip() for s in re.split(r"[,;]", env_excl) if s.strip())
+            cfg = replace(cfg, exclude_patterns=patterns)
 
     if overrides:
         cfg = replace(cfg, **overrides)  # type: ignore[arg-type]

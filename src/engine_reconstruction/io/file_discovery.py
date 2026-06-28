@@ -10,6 +10,7 @@ refine or override it (geometry-based auto-derivation + optional CSV).
 
 from __future__ import annotations
 
+import fnmatch
 import re
 from pathlib import Path
 
@@ -26,6 +27,8 @@ logger = get_logger(__name__)
 _CONFIG_SUFFIX = re.compile(r"[_-](?:free[_-]flying|installed|uninstalled)$", re.IGNORECASE)
 _CONFIG_TAG = re.compile(r"[_-](installed|uninstalled)$", re.IGNORECASE)
 _ROLE_TOKENS = ("inboard", "outboard")
+# Characters that switch a pattern from "substring" to "glob" matching.
+_GLOB_META = re.compile(r"[*?\[]")
 
 # System lookup by component-key prefix (engine body).
 _SYSTEM_BY_PREFIX: tuple[tuple[str, str], ...] = (
@@ -50,6 +53,37 @@ def config_tag(stem: str) -> str | None:
     """
     m = _CONFIG_TAG.search(stem)
     return m.group(1).lower() if m else None
+
+
+def matches_exclude(stem: str, patterns: tuple[str, ...]) -> bool:
+    """Return ``True`` if ``stem`` should be ignored per the exclusion patterns.
+
+    Matching is case-insensitive. Each pattern is interpreted as:
+
+    * a **glob** (``fnmatch`` against the full stem) if it contains a glob
+      metacharacter (``*`` ``?`` ``[``), e.g. ``"Pylon_*_cutoff_*"``;
+    * otherwise a plain **substring** match, e.g. ``"heatshield"`` drops every
+      file whose name contains it.
+
+    Args:
+        stem: FPD file stem (the configuration suffix is still attached).
+        patterns: Exclusion patterns from :attr:`Config.exclude_patterns`.
+
+    Returns:
+        Whether ``stem`` matches any pattern.
+    """
+    s = stem.lower()
+    for pat in patterns:
+        p = pat.strip()
+        if not p:
+            continue
+        p_low = p.lower()
+        if _GLOB_META.search(p):
+            if fnmatch.fnmatch(s, p_low):
+                return True
+        elif p_low in s:
+            return True
+    return False
 
 
 def classify(path: Path) -> FpdFile:
@@ -145,6 +179,24 @@ def discover(config: Config) -> list[FpdFile]:
         )
     if not paths:
         raise DiscoveryError(f"No .fpd files match configuration '{wanted}' in {fpd_dir}")
+
+    # Exclusion filter: drop surfaces whose stem matches a configured name
+    # pattern. Excluded files are ignored everywhere downstream (parse, fit,
+    # sew, export, metadata) — this is the single gate for "ignore this surface".
+    if config.exclude_patterns:
+        excluded = [p for p in paths if matches_exclude(p.stem, config.exclude_patterns)]
+        if excluded:
+            paths = [p for p in paths if p not in excluded]
+            logger.info(
+                "Exclusion patterns %s: ignoring %d file(s): %s",
+                list(config.exclude_patterns),
+                len(excluded),
+                sorted(p.stem for p in excluded),
+            )
+        if not paths:
+            raise DiscoveryError(
+                f"All files excluded by patterns {list(config.exclude_patterns)} in {fpd_dir}"
+            )
 
     # Duplicate detection by stem (case-insensitive).
     seen: dict[str, Path] = {}

@@ -36,6 +36,16 @@ class Config:
     # "_installed" / "_uninstalled"), select which one to reconstruct. Files with
     # no such tag (e.g. "_free-flying") are always included regardless.
     configuration: str = "uninstalled"
+    # Surfaces whose file stem matches ANY of these patterns are *ignored*
+    # entirely — never parsed, fit, sewn, or written. This is the editable
+    # name-based exclusion list: add a pattern to drop a surface, remove one to
+    # restore it (or pass --no-exclude / RB3135_EXCLUDE=none for one run).
+    # Matching is case-insensitive. A pattern with a glob metacharacter
+    # (``*`` ``?`` ``[``) is matched with fnmatch against the full stem;
+    # otherwise it is a plain substring match.
+    # Default: drop the pylon heatshield body (a separate contact-only shell
+    # around the core nozzle) — see file_discovery.matches_exclude.
+    exclude_patterns: tuple[str, ...] = ("Pylon_heatshield_body",)
     include_pylon: bool = True  # sew the pylon fairing into the engine assembly
     # The next two are OFF by default: the pylon cut/trim planes (~43 m) and the
     # CFD density cylinders are huge auxiliary surfaces that bury the engine in a

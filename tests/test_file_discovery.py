@@ -88,6 +88,57 @@ def test_discover_configuration_filter(tmp_path):
     assert "BP_inner_inboard_uninstalled" not in stems  # other configuration dropped
 
 
+@pytest.mark.parametrize(
+    "stem,patterns,expected",
+    [
+        # substring match (case-insensitive), no glob metachar
+        ("Pylon_heatshield_body_TE_cutoff_uninstalled", ("Pylon_heatshield_body",), True),
+        ("Pylon_heatshield_body_inlet_cutoff_uninstalled", ("heatshield",), True),
+        ("Pylon_upper_uninstalled", ("Pylon_heatshield_body",), False),
+        ("Nacelle_inboard_uninstalled", ("Pylon_heatshield_body",), False),
+        # glob match
+        ("Pylon_heatshield_body_TE_cutoff_uninstalled", ("*cutoff*",), True),
+        ("CR_TE_inboard_uninstalled", ("*cutoff*",), False),
+        ("BP_inner_inboard_uninstalled", ("BP_*_inboard_*",), True),
+        # multiple patterns / empty + blank are ignored
+        ("Nacelle_inboard_uninstalled", ("foo", "", "  ", "nacelle"), True),
+        ("Nacelle_inboard_uninstalled", (), False),
+    ],
+)
+def test_matches_exclude(stem, patterns, expected):
+    assert file_discovery.matches_exclude(stem, patterns) is expected
+
+
+def test_discover_exclude_drops_matching(tmp_path):
+    grid = "2 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n"
+    for name in [
+        "Pylon_upper_free-flying",
+        "Pylon_heatshield_body_surface_cutoff_free-flying",
+        "Pylon_heatshield_body_TE_cutoff_free-flying",
+        "Nacelle_inboard_free-flying",
+    ]:
+        (tmp_path / f"{name}.fpd").write_text(grid)
+    cfg = Config(fpd_dir=tmp_path, exclude_patterns=("Pylon_heatshield_body",))
+    stems = {f.stem for f in file_discovery.discover(cfg)}
+    assert stems == {"Pylon_upper_free-flying", "Nacelle_inboard_free-flying"}
+
+
+def test_discover_exclude_none_keeps_all(tmp_path):
+    grid = "2 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n"
+    for name in ["Pylon_heatshield_body_TE_cutoff_free-flying", "Nacelle_inboard_free-flying"]:
+        (tmp_path / f"{name}.fpd").write_text(grid)
+    cfg = Config(fpd_dir=tmp_path, exclude_patterns=())
+    assert len(file_discovery.discover(cfg)) == 2
+
+
+def test_discover_exclude_all_raises(tmp_path):
+    grid = "2 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n"
+    (tmp_path / "Pylon_heatshield_body_TE_cutoff_free-flying.fpd").write_text(grid)
+    cfg = Config(fpd_dir=tmp_path, exclude_patterns=("heatshield",))
+    with pytest.raises(DiscoveryError):
+        file_discovery.discover(cfg)
+
+
 def test_discover_counts(tmp_path):
     for name in [
         "Spinner_inboard_free-flying",

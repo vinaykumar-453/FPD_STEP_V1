@@ -24,7 +24,9 @@ def _dataset_available(cfg: Config) -> bool:
 
 
 def test_real_dataset_classification():
-    cfg = load_config()
+    # Disable the default name-based exclusion so this exercises the classifier
+    # over the full inventory (all 19 pylon surfaces), independent of policy.
+    cfg = load_config(exclude_patterns=())
     if not _dataset_available(cfg):
         pytest.skip(f"FPD dataset not present at {cfg.fpd_dir}")
     files = file_discovery.discover(cfg)
